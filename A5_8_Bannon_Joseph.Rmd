@@ -1,0 +1,211 @@
+---
+title: "Assignment 5 - ggplot2 (4 pts)"
+author: "Group 8, Joseph Bannon (jb9war)"
+date: "Due Date: 11:59pm, Feb 13"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    code_folding: show
+  pdf_document:
+    toc: yes
+---
+
+```{=html}
+<style>
+h1.title {
+  font-size: 30px;
+}
+h1 {
+  font-size: 26px;
+}
+h2 {
+  font-size: 22px;
+}
+h3 { 
+  font-size: 18px;
+}
+
+</style>
+```
+
+# Group Homework 
+
+- You will work with your group to complete this assignment.
+
+- *Submit your group's shared `.Rmd` AND "knitted"`.html` files*
+    
+    +  Your "knitted .html" submission must be created from your "group .Rmd" but be created on your own computer
+    
+    + Confirm this with the following comment included in your submission text box: **"Honor Pledge: I have recreated my group submission using using the tools I have installed on my own computer"**
+    
+    + Name the files with a group name and YOUR name for your submission
+
+- Please use `ggplot2` for this assignment.
+
+*Each group member must be able to submit this assignment as created from their own computer. If only some members of the group submit the required files, those group members must additionally provide a supplemental explanation along with their submission as to why other students in their group have not completed this assignment.*
+
+
+# Part 1 
+
+- Use the occupational experience variable (“oexp”) of the income_example dataset and plot
+ 
+  + a histogram, 
+  + a kernel density estimate, 
+  + a boxplot of “oexp”, 
+  + a set of boxplots showing the distribution of “oexp” by sex crossed with occupational status (“occ”). 
+ 
+- You can either produce four separate but small plots, or you can use `gridExtra::grid.arrange(), ggpubr::ggarrange(), cowplot::plot_grid()`, or `patchwork` to create a plotting region consisting of four subplots. 
+
+- That is, you should create a ggplot version of Part 1 in Assignment 4. There is no need to describe the distributions of occupational experience in words. But make sure that you draw four plots and add x, y-labels and titles using the function `labs(x=..., y=..., title=...)`.
+
+```{r}
+library(foreign)
+edu_df <- read.spss('SCS_QE.sav', to.data.frame = TRUE)
+```
+
+
+```{r}
+# add your codes
+library("ggplot2")
+library('magrittr')
+library('dplyr')
+library('tidyr')
+ggplot(income_df) + geom_histogram(aes(x = oexp), alpha=.7, bins = 20) +    
+  labs(title = "Histogram of occupational expierence",
+         x = "Occupational expierence (yrs)",
+         y = "Count") + theme_minimal()
+
+ggplot(income_df) + geom_density(aes(x = income),size=1,col = 'red') +    
+  labs(title = "Kernel density estimate occupational expierence",
+         x = "Occupational expierence (yrs)",
+         y = "Probability") + theme_minimal()
+
+ggplot(income_df, aes(x = income)) + geom_boxplot(size = 1) +  labs(title = "Boxplot of occupational expierence",
+         x = "Occupational expierence (yrs)",
+         y = NULL) +  theme_bw()
+
+income_df = income_df %>% unite('sex.occ',sex,occ,remove = FALSE)
+ggplot(income_df, aes(x=oexp, y = sex.occ))+geom_boxplot()+    
+  labs(title = "Boxplot of occupational expierence by sex and occupational status",
+         x = "Occupational expierence (yrs)",
+         y = "Sex by occupational expierence") + theme_minimal()
+```
+
+
+# Part 2
+
+- Use the SCS Data set you downloaded from Collab for Assignment 4, and investigate the relationship between the mathematics achievement score (“mathpre”) and the math anxiety score (“mars”) by plotting the data. 
+
+(i) Produce a scatterplot between “mathpre” and “mars”. You might consider using function `geom_jitter()` or the argument `alpha` from package `ggplot2` for avoiding overlying points.
+
+```{r}
+# add your codes
+ggplot(data = edu_df, aes(x=mathpre, y=mars)) + geom_point() + geom_jitter(width = .5, height = .5)+
+    labs(title = "Scatter plot of Math achievement vs Math Anxiety",
+         x = "Math achievement ",
+         y = "Math Anxiety") 
+
+```
+
+(ii) Draw a conditioning plot for female and male students (variable “male”). Add `+ facet_wrap()` or  `+ facet_grid()` in your first argument to create a conditioning plot.
+
+```{r}
+# add your codes
+ggplot(data = edu_df, aes(x=mathpre, y=mars, color=male)) + geom_point() + geom_jitter(width = .5, height = .5)+ 
+  facet_grid(~male)+
+  scale_fill_brewer(palette = "Set1"
+                    , name = "male") +
+  labs(title = "Scatter plot of Math achievement vs Math Anxiety by Sex",
+         x = "Math achievement ",
+         y = "Math Anxiety") + theme(legend.position = "None")
+```
+- The plots shows so relationship between math achievement and math anxiety. The students with low achievement scores had no noticable pattern but the high achievement scores all had low anxiety. Whether this is any indicator of causation is not known as low achievement could cause anxiety or visa versa. The female students seemed to have much higher anxiety in general than the male studnets. The female students also look to have a more spread out achievement scores while the male achievement scores were clustered higher. However, this could be due to a higher female sample size. There is no clear evidence of Simpson's paradox because the in the original plot, Math Anxiety is negatively corrleated with Math Achievement and the correlation is roughly followed when the data is split by Sex.
+
+# Part 3
+
+- Use the UC-Berkely Admissions dataset which is named as "UCBAdmissions" and is included in base R. This shows the number of students – male and female – who were admitted or rejected from the six largest departments at UC-Berkeley. The dataset takes a form of a three-dimensional array.
+
+- I provide codes for creating aggregated data and grouped data. If you like, you can use your own codes to construct aggregated and grouped data. Also, you can use *the rejection rate* instead of *the admission rate* to draw plots. If you like to use the rejection rate,  please use `%>% filter(Admit == "Rejected")` instead of `%>%  filter(Admit == "Admitted")`.
+
+- `dplyr` is a grammar of data manipulation. For more information about `dplyr`, 
+
+  + [R4DS - data transformation](https://r4ds.had.co.nz/transform.html)
+  + [tidyverse - dplyr](https://dplyr.tidyverse.org)
+
+
+```{r, warning=FALSE}
+data(UCBAdmissions) # load data
+
+library(broom) # load package broom
+dat <- tidy(UCBAdmissions)
+```
+
+```{r, message=FALSE}
+# load package dplyr
+library(dplyr)
+
+# create aggregated data
+dat_agg <- dat %>% 
+  group_by(Admit, Gender) %>% 
+  summarize(n = sum(n)) %>% 
+  ungroup() %>% 
+  group_by(Gender) %>% 
+  mutate(Prop = n/sum(n)) %>% 
+  filter(Admit == "Admitted")
+
+knitr::kable(dat_agg)
+
+# create grouped data
+dat_dept <- dat %>% 
+  group_by(Gender, Dept) %>% 
+  mutate(Prop = n/sum(n)) %>% 
+  filter(Admit == "Admitted")
+
+knitr::kable(dat_dept)
+```
+
+```{r}
+head(dat_agg)
+```
+
+
+
+- Draw plots to provide evidence of Simpson's Paradox. 
+
+```{r}
+# add your codes
+ggplot(dat_agg,aes(x=Gender, y=Prop, fill=Gender)) + geom_bar( stat='identity') + 
+  labs(title = "Bar plot of Gender vs Acceptance Rate",
+         x = "Gender",
+         y = "Acceptance Rate") + theme(legend.position = "None")
+```
+```{r}
+ggplot(dat_dept,aes(x=Gender, y=Prop, fill=Gender)) + geom_bar( stat='identity') + facet_wrap(~Dept) +
+  labs(title = "Bar plot of Gender vs Acceptance split by depatment",
+         x = "Gender",
+         y = "Acceptance") + theme()
+```
+
+- Describe in words the relation between the admission rate and gender.
+
+*describe your plots.*
+- In the original plot, the male acceptance rate is much higher than the female acceptance rate with the male proportion close to forty five percent and the female at thirty percent. However, when split by department, the split is not as dramatic. For department A, department B, department D and department F the female proportion is greater than the male proportion, especially in department A. In department C and department E, the male proportion is higher than the female slightly, but not by fifteen percent. This data is an example of Simpson's paradox where the trends in the group data was reversed in the department split data. This could be a result of confounding variables such as the number of applicants or if one gender applies to more departments than others.
+
+```{r}
+ggplot(dat_dept,aes(x=Gender, y=n, fill=Gender)) + geom_bar( stat='identity') + facet_wrap(~Dept) +
+  labs(title = "Bar plot of Gender vs Number of Applicants split by depatment",
+         x = "Gender",
+         y = "Number of applicants") + theme()
+
+ggplot(dat_dept,aes(x=Dept, y=Prop)) + geom_col( position='dodge')  +
+  labs(title = "Bar plot of Deptartment vs Acceptance rate",
+         x = "Department",
+         y = "Acceptance rate") + theme()
+```
+- As you can see, the number of male applicants to department A and B is much greater than number of female applicants. Likewise, the number of female applicants in department C, D and E are greater or close to number of male applicants. Then, considering the average department acceptance rate, department A and B have a much higher acceptance rate than department C, D and E. This is the reason for Simpson's paradox as women are applying to more difficult departments than males.
+
+
+- One of the group members will **present R codes and plots** for Part 3 in class on **Feb. 14 (Tue)**.  Also, if you're a presenter, please bring your laptop so that you can share your screen on zoom for the presentation.
+
