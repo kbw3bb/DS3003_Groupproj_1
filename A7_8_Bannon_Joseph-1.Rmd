@@ -1,0 +1,183 @@
+---
+title: "Assignment 7 - loess (4 pts)"
+author: "Group 8, jb9war"
+date: "Due Date: 11:59pm, Feb 20"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    code_folding: show
+  pdf_document:
+    toc: yes
+---
+
+```{=html}
+<style>
+h1.title {
+  font-size: 30px;
+}
+h1 {
+  font-size: 26px;
+}
+h2 {
+  font-size: 22px;
+}
+h3 { 
+  font-size: 18px;
+}
+
+</style>
+```
+
+# Group Homework 
+
+- You will work with your group to complete this assignment.
+
+- *Submit your group's shared `.Rmd` AND "knitted"`.html` files*
+    
+    +  Your "knitted .html" submission must be created from your "group .Rmd" but be created on your own computer
+    
+    + Confirm this with the following comment included in your submission text box: **"Honor Pledge: I have recreated my group submission using using the tools I have installed on my own computer"**
+    
+    + Name the files with a group name and YOUR name for your submission
+
+*Each group member must be able to submit this assignment as created from their own computer. If only some members of the group submit the required files, those group members must additionally provide a supplemental explanation along with their submission as to why other students in their group have not completed this assignment.*
+
+
+Joseph Bannon Honor pledge
+Honor Pledge: I have recreated my group submission using using the tools I have installed on my own computer
+
+# Part 1 
+
+- Use the SCS Data set you downloaded from Collab for Assignments 4 and 5, and then investigate the relationship between the mathematics achievement score (“mathpre”) and the math anxiety score (“mars”) by plotting the data and the path of means. 
+
+- Don't use package `ggplot2` for Part 1. Use `ggplot2` for Part 2.
+
+
+
+```{r}
+library(foreign)
+edu_df <- read.spss('SCS_QE.sav', to.data.frame = TRUE)
+library("ggplot2")
+library("car")
+```
+
+
+(1) Produce a scatterplot between “mathpre” and “mars” (you might consider using `jitter()` or `alpha()` for avoiding overlying points) and add a regression smoother using `loess()`. Compare the resulting plot to the plot you obtain by using `scatterplot()` from the `car`-package.
+ 
+```{r}
+# add your codes
+mathpre <- edu_df$mathpre
+mars <- edu_df$mars
+plot(jitter(mars, factor = 2), jitter(mathpre, factor = 2),
+     xlab = 'Math anxiety', ylab='Math achievment', main = 'Math anxiety vs Math achievement', pch = 16)
+out.all <- loess(mathpre ~ mars, edu_df, span = .6, degree = 2) 
+# estimate model for all employees
+x.val <- seq(0, 120, by = 1)
+lines(x.val, predict(out.all, x.val), lwd = 3, lty = 1, col = 'red')       # predict & plot mean values for all
+
+
+scatterplot(mathpre ~ mars, data=edu_df, span = .75,
+    xlab = 'Math anxiety', ylab='Math achievment', main = 'Math achievement vs Math anxiety', pch = 16)
+```
+
+- The plot obtained using the Loess regression line is very similar to the plot with the "scatterplot()" function. The scatter plot function produces some extra information like a linear regression line, confidence intervals and box plot. For instance, the box plots show that the math achievement variable is evenly spread but math anxiety has a tail towards the high end of the data. This could be an explination for the negative correlation between the two.
+
+(2) Draw separate regression smoothers for female and male students (variable “male”). Use `loess()`.
+
+```{r}
+# add your codes
+plot(jitter(mars, factor=2), jitter(mathpre, factor=2),
+xlab = 'Math anxiety', main ='Coplot of Math achievement vs Math anxiety by sex', ylab = 'Math achievement',
+col = c("red", "blue")[as.numeric(edu_df$male)], pch = 16)
+
+x.val <- seq(0, 120, by = 1)
+
+
+out.m <- loess(mathpre ~ mars, edu_df, subset = male == 'male', 
+         span = .75, degree = 1)                               # estimate model for men
+out.f <- loess(mathpre ~ mars, edu_df, subset = male == 'female', 
+         span = .75, degree = 1)                               # estimate model for women
+                                 # get x values where to estimate means
+lines(x.val, predict(out.m, x.val), col = 'blue', lwd = 2)    # predict & mean values for men
+lines(x.val, predict(out.f, x.val), col = 'red', lwd = 2)
+
+legend("topright", inset=.02, title="Sex",
+   c("Female","Male"), fill=c(rgb(1,0,0),rgb(0,0,1)), horiz=TRUE, cex=0.8)
+```
+
+
+(3) Describe the roles of regression smoothers in finding a relationship between math scores and math anxiety. 
+
+- The regression smoothers are important in helping generalize the data from the scatter plots. With the scatter plot alone, it is difficult to see the relationship between Math Achievement and Math Anxiety. However, the Loess regression line shows a negative correlation between the variables. The line also shows changes slope as Math Anxiety  increases from a zero slope to a negative slope This indicates the slope is not as high in low Math Anxiety as in high Math Anxiety. Similarly, the split by gender shows that there is a close to zero slope in male gender, while the slope is more negative in the female gender.
+
+
+For (1), you should produce plots similar to the following ones [‘play’ with the `span` argument in `loess()`]: 
+
+
+For (2), you should produce a plot similar to the following one:
+
+
+
+# Part 2
+
+- Re-do **Part 1** using package `ggplot2`. That is, 
+
+(1) Produce a scatterplot (you might consider using `geom_jitter()` or the argument `alpha` from package `ggplot2` for avoiding overlying points) and add a regression smoother using `geom_smooth()`. 
+
+```{r}
+ggplot(data = edu_df, aes(x=mars, y=mathpre)) + geom_point() + geom_jitter(width = .5, height = .5)+
+    labs(title = "Scatter plot of Math Anxiety vs Math Achievement",
+         x = "Math Anxiety",
+         y = "Math Achievement") + geom_smooth(method='loess', formula= y~x, col="red", se = FALSE, span = .6) + theme_bw()
+```
+
+(2) Draw separate regression smoothers for female and male students (variable “male”). Use package `ggplot2`.
+
+```{r}
+# add your codes  
+ggplot(data = edu_df, aes(x=mars, y=mathpre, col = male)) + geom_point() + geom_jitter(width = .5, height = .5)+
+    labs(title = "Scatter plot of Math Anxiety vs Math Achievement",
+         x = "Math Anxiety",
+         y = "Math Achievement") + geom_smooth(method='loess', formula= y~x, se = FALSE, span = .9, degree= 1, fullrange = TRUE) + theme_bw() + scale_y_continuous(breaks=seq(0,12,2),limits = c(0,12))+scale_x_continuous(limits = c(20,120),breaks=seq(20,120,20))
+```
+
+
+# Part 3
+
+- Use a dataset in data repositories (e.g., [kaggle](https://www.kaggle.com/datasets)) that gives the measurements in different conditions like `iris` data. For more info on `iris` data, use `?iris`.
+
+- Briefly describe the dataset you're using for this assignment (e.g., means to access data, context, sample, variables, etc...).
+
+```{r}
+calHousingDF <- read.csv('housing.csv')
+```
+
+
+The data set is from the California housing price data set, which contains data about certain areas in California. The columns are latitude, longitude, total rooms, median income, total bedrooms, population, median housing age (all continuous columns) and ocean proximity (a categorical variable). The values of the long form columns that we will be focusing on are population and total rooms, which are positively correlated as more rooms means higher population. The X axis is median house value, which both population and total rooms increases then decreases will. 
+   
+- Transform the dataset from a wide to a long format. Produce any ggplot where the key variable is used in function `facet_grid` or `facet_wrap`.
+
+- Here is one example we used in class. You may want to delete the below example when you submit your files.
+
+```{r}
+library(tidyr)
+library(ggplot2)
+```
+
+
+```{r}
+calHousingDF <- read.csv('housing.csv')
+df <- calHousingDF[c('population','total_rooms','median_house_value')]
+df <- gather(df, key = geoPos, value = Number_of, 
+                    total_rooms:population)
+
+
+head(df)
+
+ggplot(df, aes(x=median_house_value, y= Number_of)) + geom_point(alpha = .1) + 
+  facet_grid(~ geoPos) + theme_bw()
+```
+
+
