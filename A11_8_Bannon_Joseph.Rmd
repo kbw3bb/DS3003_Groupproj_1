@@ -20,6 +20,7 @@ library(shiny)
 library(rsconnect)
 library(dplyr)
 library(ggplot2)
+library(foreign)
 ```
 
 # Group Homework 
@@ -99,7 +100,7 @@ inputPanel(
 )
 
 renderPlot({
- ggplot(covid_region_SE[which(covid_region_SE$Region == input$region),], aes(x=Country, y=rate)) + geom_col(fill = 'light blue') + theme(axis.text.x=element_text(angle=90, hjust=1), text = element_text(size = 20) ) + geom_errorbar(aes(ymin=rate-1.96*SE, ymax=rate+1.96*SE), width=.2) + labs(x = 'WHO: # Reported Deaths / # Reported Cases', y = 'Mortality rate', title=paste0("Mortality rate of countries grouped by Region: ", input$region))
+ ggplot(covid_region_SE[which(covid_region_SE$Region == input$region),], aes(x=Country, y=rate)) + geom_col(fill = 'light blue') + theme(axis.text.x=element_text(angle=90, hjust=1), text = element_text(size = 20) ) + geom_errorbar(aes(ymin=rate-1.96*SE, ymax=rate+1.96*SE), width=.2) + labs(x = 'WHO: # Reported Deaths / # Reported Cases', y = 'Mortality rate', title=paste0("Mortality rate grouped by Region: ", input$region))
 })
 
 ```
@@ -109,9 +110,14 @@ renderPlot({
 
 - Briefly describe the dataset you're using for this assignment (e.g., means to access data, context, sample, variables, etc...)
   
-   + *describe your data.*
+  
+The data set is about titled 'Ferro (FOE) Stock Price from 1980 - 2022' and contains information about stock price of the Ferro Corporation. The columns are Date (the date between 1980-2020 every day), Open (the price when trading begins), High (the daily high), Low (the daily low), Close (the price when trading begins), Adj Close (closing price adjusted for cooperate actions).
    
 - Select *two* continuous variables (denoted as "A" and "B") 
+
+
+The two continuous variables selected are Date and High.
+
 
 - Create an interactive scatterplot between "A" and "B" with a loess line using Shiny app. Please refer to lecture notes `DS3003_localreg_loess_note.pdf`, `DS3003_localreg_loess_code.rmd`, and `DS3003_localreg_loess_code.html` 
 
@@ -121,10 +127,50 @@ renderPlot({
     - The other input variable is the span value ranging from 0.2 to 0.9.
    
 - You can choose appropriate control types from [Widget gallery](https://shiny.rstudio.com/gallery/widget-gallery.html).
+ 
+```{r}
+foe <- read_csv("FOE.csv")
+
+```
+
      
 ```{r}
 # add your codes 
+
+
+shinyApp(
+  ui = fluidPage(
+   sidebarLayout(
+    sidebarPanel( 
+     sliderInput("span", label = "Span adjustment:",
+              min = 0.2, max = 0.9, value = 0.5, step = 0.1),
+      selectInput("degree", label = "Degree of Loess line:",
+              choices = c(0, 1, 2), selected = 1),
+    ),
+    mainPanel(
+     plotOutput("FOEplot"),
+    )
+   )
+  ),
+  
+  server = function(input, output){
+    
+    output$FOEplot <- renderPlot({
+    plot(High ~ Date, data = foe, cex = .4, xlab = 'Date (YYYY-MM-DD)',  ylab = 'Stock Price High (dollars)', main = 'loess regression of Date vs Stock Price High') 
+
+x.val <- seq(min(foe$Date), max(foe$Date), length.out = 97)
+out.lss2 <- loess(High ~ as.numeric(Date), data = foe, span = input$span, degree = as.numeric(input$degree))
+y.pred <- predict(out.lss2, data.frame(Date = x.val))
+lines(x.val, y.pred, col = 'green', lwd = 2)
+    })
+    
+    
+  }                                  
+)
+
 ```
 
 - Describe a relationship between A and B. Also, describe how a loess line changes as the degree increases and/or the span value increases.
+
+The relationship between Date and High is non linear, possible cubic. There is a positive correlation between dates: 1980 - 2000, then a negative correlation between dates: 2000-2012, then a positive correlation again between dates: 2012 - 2020. The changes in the span for the loess line is that as span increases, the line becomes more general by staying closer to the mean of High through sections of the data. At a lower span, the line follows the High columns general increases closely. The difference between degree 0,1,2 is that high degree follows the small fluxations more closely, while low degree follows the mean of these small flucations. 
 
