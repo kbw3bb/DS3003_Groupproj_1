@@ -1,0 +1,130 @@
+---
+title: "Assignment 11 - Shiny"
+author: "Group 8, Joseph Bannon(jb9war)"
+date: "Due Date: 11:59pm, Mar 27"
+output:
+     html_document:
+          number_sections: yes
+          toc: TRUE
+          toc_depth: 4
+          toc_float: true
+          toc_collapsed: true
+          theme: journal
+          code_folding: show
+runtime: shiny    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE)
+library(shiny)
+library(rsconnect)
+library(dplyr)
+library(ggplot2)
+```
+
+# Group Homework 
+
+- You will work with your group to complete this assignment.
+
+- Upload your Shiny app on [ShinyApps.io](https://www.shinyapps.io).
+
+- Submit your group's shared `.Rmd` AND your URL (https://XXXXX.shinyapps.io/XXXXX) on Collab.
+
+- Confirm this with the following comment included in your submission text box: **"Honor Pledge: I have recreated my group submission using using the tools I have installed on my own computer"**
+    
+- Name the files with a group name and YOUR name for your submission.
+
+- One of the group members will **present R codes and plots for Parts 1 and 2** in class on **Mar. 28 (Mon)**. Please e-mail the instructor if you're a presenter by 11:59pm, Mar. 27. Also, if you're a presenter, please bring your laptop so that you can share your screen on zoom for the presentation.
+
+# Part 1
+
+
+
+- First, get the latest data from from [https://covid19.who.int/info?openIndex=2](https://covid19.who.int/info?openIndex=2).
+      
+   - The file should likely be named "WHO-COVID-19-global-table-data.csv"
+      
+   - Don't use the data for Group Assignment 10. It may not be the most recent data. 
+
+- Create a subset including 3 countries per `WHO region` (Africa, Americas, Eastern Mediterranean, Europe, South-East Asia, Western Pacific). You can choose any three countries within each `WHO region` to compare the mortality rate (`mutate(rate = "Deaths - cumulative total"/"Cases - cumulative total")`). The selected countries can be the same as those for Group Assignment 10.
+
+- Create a shiny app to produce bar plots (with error bars), along with the control type of `selectInput()`.
+
+     - You need to use `selectInput()` in the `ui` to select one level from the `WHO region` variable (with 6 levels: Africa, Americas, Eastern Mediterranean, Europe, South-East Asia, Western Pacific). 
+     
+     - Your output should be a barplot of mortality rates with error bars from three countries in the selected region. 
+
+- Example: https://youmi.shinyapps.io/A11examplePart1/
+
+## Get data
+
+
+```{r}
+# add your codes 
+covids<- read.csv('WHO-COVID-19-global-table-data.csv')
+```
+
+```{r}
+# bar graphs
+covids <- cbind(Country = rownames(covids), covids)
+rownames(covids) <- 1:nrow(covids)
+names(covids)[2] <- 'Region'
+names(covids)[9] <- 'Cumulative_deaths'
+names(covids)[4] <- 'Cumulative_cases'
+covid_df_region <- covids
+```
+
+## Manipulate data
+```{r}
+focus <- c('Brazil', 'Mexico', 'Colombia', 
+           'Finland', 'Norway','Italy',
+           'Indonesia', 'India', 'Thailand',
+           'Republic of Korea', 'Japan', 'Viet Nam',
+           'Qatar', 'Iraq', 'Morocco',
+           'Zambia','Algeria','Kenya'
+           )
+
+covid_region_SE <- covid_df_region %>% filter(Country %in% focus) %>%
+  mutate(rate = `Cumulative_deaths`/`Cumulative_cases`, 
+         SE = sqrt(rate*(1-rate)/`Cumulative_cases`))
+```
+
+## Plot
+
+```{r}
+regions <- c("Americas", "South-East Asia", "Europe", "Western Pacific", "Eastern Mediterranean","Africa")
+inputPanel(
+  selectInput("region", label = "Select region:",
+              choices = regions, selected = "Americas")
+)
+
+renderPlot({
+ ggplot(covid_region_SE[which(covid_region_SE$Region == input$region),], aes(x=Country, y=rate)) + geom_col(fill = 'light blue') + theme(axis.text.x=element_text(angle=90, hjust=1), text = element_text(size = 20) ) + geom_errorbar(aes(ymin=rate-1.96*SE, ymax=rate+1.96*SE), width=.2) + labs(x = 'WHO: # Reported Deaths / # Reported Cases', y = 'Mortality rate', title=paste0("Mortality rate of countries grouped by Region: ", input$region))
+})
+
+```
+# Part 2
+
+- Use a dataset that is available in data repositories (e.g., [kaggle](https://www.kaggle.com/datasets)). But don't use the datasets you used for your previous assignments.
+
+- Briefly describe the dataset you're using for this assignment (e.g., means to access data, context, sample, variables, etc...)
+  
+   + *describe your data.*
+   
+- Select *two* continuous variables (denoted as "A" and "B") 
+
+- Create an interactive scatterplot between "A" and "B" with a loess line using Shiny app. Please refer to lecture notes `DS3003_localreg_loess_note.pdf`, `DS3003_localreg_loess_code.rmd`, and `DS3003_localreg_loess_code.html` 
+
+- You need to create two input variables for loess regression. 
+
+    - One input variable is the degree with values of 0, 1, and 2.
+    - The other input variable is the span value ranging from 0.2 to 0.9.
+   
+- You can choose appropriate control types from [Widget gallery](https://shiny.rstudio.com/gallery/widget-gallery.html).
+     
+```{r}
+# add your codes 
+```
+
+- Describe a relationship between A and B. Also, describe how a loess line changes as the degree increases and/or the span value increases.
+
