@@ -21,6 +21,7 @@ library(rsconnect)
 library(dplyr)
 library(ggplot2)
 library(foreign)
+library(tidyverse)
 ```
 
 # Group Homework 
@@ -100,7 +101,7 @@ inputPanel(
 )
 
 renderPlot({
- ggplot(covid_region_SE[which(covid_region_SE$Region == input$region),], aes(x=Country, y=rate)) + geom_col(fill = 'light blue') + theme(axis.text.x=element_text(angle=90, hjust=1), text = element_text(size = 20) ) + geom_errorbar(aes(ymin=rate-1.96*SE, ymax=rate+1.96*SE), width=.2) + labs(x = 'WHO: # Reported Deaths / # Reported Cases', y = 'Mortality rate', title=paste0("Mortality rate grouped by Region: ", input$region))
+ ggplot(covid_region_SE[which(covid_region_SE$Region == input$region),], aes(x=Country, y=rate)) + geom_col(fill = 'light blue') + theme() + geom_errorbar(aes(ymin=rate-1.96*SE, ymax=rate+1.96*SE), width=.2) + labs(x = 'WHO: # Reported Deaths / # Reported Cases', y = 'Mortality rate', title=paste0("Mortality rate grouped by Region: ", input$region))
 })
 
 ```
