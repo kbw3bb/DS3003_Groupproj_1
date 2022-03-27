@@ -101,7 +101,7 @@ inputPanel(
 )
 
 renderPlot({
- ggplot(covid_region_SE[which(covid_region_SE$Region == input$region),], aes(x=Country, y=rate)) + geom_col(fill = 'light blue') + theme() + geom_errorbar(aes(ymin=rate-1.96*SE, ymax=rate+1.96*SE), width=.2) + labs(x = 'WHO: # Reported Deaths / # Reported Cases', y = 'Mortality rate', title=paste0("Mortality rate grouped by Region: ", input$region))
+ ggplot(covid_region_SE[which(covid_region_SE$Region == input$region),], aes(x=Country, y=rate)) + geom_col(fill = 'light blue') + theme() + geom_errorbar(aes(ymin=ifelse(rate - SE*1.96 < 0, 0, rate - SE*1.96) , ymax=rate+1.96*SE), width=.2) + labs(x = 'WHO: # Reported Deaths / # Reported Cases', y = 'Mortality rate', title=paste0("Mortality rate grouped by Region: ", input$region))
 })
 
 ```
@@ -173,5 +173,5 @@ lines(x.val, y.pred, col = 'green', lwd = 2)
 
 - Describe a relationship between A and B. Also, describe how a loess line changes as the degree increases and/or the span value increases.
 
-The relationship between Date and High is non linear, possible cubic. There is a positive correlation between dates: 1980 - 2000, then a negative correlation between dates: 2000-2012, then a positive correlation again between dates: 2012 - 2020. The changes in the span for the loess line is that as span increases, the line becomes more general by staying closer to the mean of High through sections of the data. At a lower span, the line follows the High columns general increases closely. The difference between degree 0,1,2 is that high degree follows the small fluxations more closely, while low degree follows the mean of these small flucations. 
+The relationship between Date and High is non linear, possible cubic. There is a positive correlation between dates: 1980 - 2000, then a negative correlation between dates: 2000-2012, then a positive correlation again between dates: 2012 - 2020. The changes in the span for the loess line is that as span increases, the line becomes more general by staying closer to the mean of High through sections of the data. At a lower span, the line follows the High columns general increases closely. The difference between degree 0,1,2 is that high degree follows the small fluxations more closely, while low degree follows the mean of these small fluctuations. 
 
