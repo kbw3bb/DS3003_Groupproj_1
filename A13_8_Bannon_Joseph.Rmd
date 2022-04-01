@@ -16,6 +16,9 @@ knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE)
 library(tidyverse)
 library(shiny)
 library(shinythemes)
+library(sf)
+library(tigris) 
+library(plotly)
 ```
 
 # Group Homework 
@@ -187,9 +190,97 @@ shinyApp(ui = ui, server = server, options = list(height = 600))
 
 - You can use any map-related functions we've learned in class or any other available functions for creating maps. Your map can be a static map or an interactive map.
 
+
+
 ```{r}
-# add your codes 
+download.file("http://www2.census.gov/geo/tiger/GENZ2015/shp/cb_2015_us_state_20m.zip", destfile = "states.zip")
+unzip("states.zip")
+usmap <- st_read("cb_2015_us_state_20m.shp", stringsAsFactors = FALSE)
+US_energy_map <- read.csv('Energy_2010-2014.csv')
+usdata <- inner_join(usmap, US_energy_map, by=c("STUSPS" = "StateCodes"))
+usdata2 <- usdata %>% filter(!STUSPS %in% c("PR", "HI", "AK"))
 ```
 
+
+```{r}
+US_energy_map_mod <- usdata2 %>%
+  mutate(Consumption_per_capita_2010 = TotalC2010/CENSUS2010POP)
+```
+
+
+<!-- ```{r, eval=TRUE} -->
+<!-- g <-  ggplot(US_energy_map_mod) + geom_sf(aes(fill=Consumption_per_capita_2010)) + theme_bw() + -->
+<!--   scale_fill_gradient(low="blue", high="red", name='Energy Consumption per capita \n(billion BTUs / person)')+ labs(x = 'Longitude', y = 'Latitude', title="Energy Consumption per Capita in the US by state") -->
+<!-- ggplotly(g) -->
+<!-- ``` -->
+
+
+
+<!-- ```{r} -->
+<!-- US_energy_map_mod$hover <- with(US_energy_map_mod, paste(NAME, '<br>', "Energy:", format(round(Consumption_per_capita_2010, 2), 2))) -->
+<!-- borders <- list(color = toRGB("black")) -->
+
+<!--   # Change some mapping options -->
+<!--   map_options <- list( -->
+<!--     scope = 'usa', -->
+<!--     projection = list(type = 'albers usa'), -->
+<!--     showlakes = TRUE, -->
+<!--     lakecolor = toRGB('white') -->
+<!--   ) -->
+<!--  plot_ly(US_energy_map_mod, z = ~Consumption_per_capita_2010, text = ~hover, locations = ~STUSPS,  -->
+<!--         type = 'choropleth', locationmode = 'USA-states',  -->
+<!--         color = ~Consumption_per_capita_2010,  -->
+<!--         colors = 'Reds',  -->
+<!--         marker = list(line = borders)) %>% -->
+<!--      layout(title = 'Energy Consumption per Capita in the US by state', geo = map_options) %>%  -->
+<!--      colorbar(title = "Energy Consumption per capita \n(billion BTUs / person)") -->
+<!-- ``` -->
+<!-- --> 
+
+```{r}
+ui <-  navbarPage(title = "Energy Consumption and Population in the US in 2010", theme = shinytheme("flatly"),
+            tabPanel("Energy Consumption",
+                   plotOutput("Energy_Consumption")
+            ),
+            tabPanel("Total Population",
+                   plotOutput("Total_Population")
+            ), 
+            tabPanel("Energy per capita",
+                   plotOutput("Energy_per_capita")
+            )
+) 
+```
+
+```{r}
+server <- function(input, output){
+    
+    output$Energy_Consumption = renderPlot({
+     
+     g <-  ggplot(US_energy_map_mod) + geom_sf(aes(fill=TotalC2010)) + theme_bw() +
+      scale_fill_gradient(low="white", high="black", name='Energy Consumption (billion BTUs)')+
+      labs(x = 'Longitude', y = 'Latitude', title="Energy Consumption in the US by state in 2010")
+      print(g)
+    })
+    output$Total_Population = renderPlot({
+     
+      g <-  ggplot(US_energy_map_mod) + geom_sf(aes(fill=CENSUS2010POP)) + theme_bw() +
+      scale_fill_gradient(low="beige", high="Red", name='Population')+
+      labs(x = 'Longitude', y = 'Latitude', title="Population in the US by state ")
+      print(g)
+    })
+    output$Energy_per_capita = renderPlot({
+     
+     g <-  ggplot(US_energy_map_mod) + geom_sf(aes(fill=Consumption_per_capita_2010)) + theme_bw() +
+      scale_fill_gradient(low="blue", high="red", name='Energy Consumption per capita \n(billion BTUs / person)')+
+      labs(x = 'Longitude', y = 'Latitude', title="Energy Consumption per Capita in the US by state in 2010")
+      print(g)
+    })
+    
+  }
+```
+
+```{r}
+shinyApp(ui = ui, server = server, options = list(height = 600))
+```
 - Describe your choropleth map.
 
