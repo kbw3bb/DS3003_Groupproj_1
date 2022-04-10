@@ -1,0 +1,163 @@
+---
+title: "Assignment 16 - Animations (4 pts)"
+author: "Group 8, Eric Ladd (eml8sj)"
+date: "Due Date: 11:59pm, Apr 10"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    code_folding: show
+# runtime: shiny    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE)
+library(tidyverse)
+library(shiny)
+library(shinythemes)
+```
+
+# Group Homework 
+
+- You will work with your group to complete this assignment.
+.
+- Submit your group's shared `.Rmd` AND your kintted `html` on Collab.
+
+- You **don't** need to upload the html file on RPubs. 
+
+- Confirm this with the following comment included in your submission text box: **"Honor Pledge: I have recreated my group submission using using the tools I have installed on my own computer"**
+    
+- Name the files with a group name and YOUR name for your submission.
+
+
+# Part 1: `gganimate`
+
+- First, get the latest data from [OWID](https://ourworldindata.org/covid-deaths).
+      
+   - The file should likely be named "owid-covid-data.xlsx" or "owid-covid-data.csv." (or jason file)
+      
+- Second, choose six countries that are of interest to you, and create a subset with the six countries.
+
+- Third, create an animated line plot of "Covid Deaths Each Day Per 100,000 People in Countries" as in our lecture note on Animations.  
+
+
+```{r}
+# add your codes 
+
+owid = read.csv("owid-covid-data.csv")
+#str(owid) # date not formatted
+owid$date = as.Date(owid$date)
+focus = c("China", "United States", "Nigeria", "Singapore", "Sweden", "Peru")
+
+focus2 = "China"
+subset = owid[owid$location %in% focus,]
+
+covid_per_capita_fig <- subset %>% 
+  # http://www.sthda.com/english/wiki/ggplot2-line-types-how-to-change-line-types-of-a-graph-in-r-software
+  ggplot(mapping=aes(x=date, y=100000*new_deaths_smoothed/population,
+                     color=location, linetype=location, group=location)) + 
+  geom_line() + theme_bw() + 
+  # https://stackoverflow.com/questions/52060601/ggplot-multiple-legends-arrangement
+  theme(legend.position="top", legend.title=element_blank(), 
+        legend.direction="horizontal", legend.box="vertical") +
+  labs(title="Covid Deaths Each Day Per 100,000 People in 6 Countries", x="Date", y="Mortality rate")
+
+covid_per_capita_fig # the non-animated ggplot output
+
+```
+
+```{r}
+
+library(gganimate)
+
+covid_per_capita_fig + geom_point() + transition_reveal(date)   #the animated output
+
+
+```
+
+- Fourth, describe your findings from the plot.
+
+The plot results is pretty eye-opening, because we see that the countries of Nigeria and China are both incredibly low across the board with reported deaths when compared to the other countries. When taking a closer look at the data, China virtually stops reporting deaths around 4,600 total deaths. While China was reported to have used draconian methods to stop the spread of COVID, these numbers still seem very unrealistic. I've heard things about how China had been accused of classifying deaths to other ailments like the flu instead of COVID, and that this was a mechanism for them to obfuscate the true death toll and to make it seem like they were managing COVID better than anywhere else in the world, but I'm not sure how accurate those claims are.
+
+Nigeria similarly stops reporting deaths, but this may be due to being less equipped to effectively track the spread of the disease and damage inflicted by the disease. In both cases, we're left wondering what the true reasons are behind this lack of reporting when compared to other countries.
+
+
+# Part 2: `plotly`
+
+- Create an animated plot with the `Play` button from package `plotly`. Please refer to our lecture note on Animations, [feature of plotly](https://plotly.com/r/animations/), and [cumulative anmiations](https://plotly.com/r/cumulative-animations/).
+
+- First, use an appropriate dataset that is available in data repositories (e.g., [kaggle](https://www.kaggle.com/datasets)). But don't use the built-in datasets or datasets from packages. Don't use any datasets you used for the previous assignments.
+
+- Second, briefly describe the dataset you're using for this assignment (e.g., means to access data, context, sample, variables, etc...)
+
+   + The data set used comes from Kaggle:
+   [Traffic Deaths Data](/https://www.kaggle.com/datasets/shivkumarganesh/road-traffic-deaths-1990-to-2019) 
+   
+   The data set. and gives yearly data on traffic fatalities, having 6 variables and 8010 rows. Each row represents one year's data for a particular "Entity". An entity represents either a country or an overall region. The data also shows population for the entity as well as if the laws in the entity dictate driving on the left or right side of the road. For the purpose of this plot, we used 6 global regions which aggregate data from the countries within those regions and we will view the trends in traffic deaths over the 30-year time horizon. We mutated the death numbers to show deaths per 100,000 in the population to be able to compare the regions of different populations.
+   
+- Third, create any animated plot with the `Play` button.  
+
+```{r}
+# add your codes 
+tr_deaths = read.csv("traffic.csv")
+# tr_deaths2 =filter(tr_deaths, Historical_Population > 500000) # not necessary since we decided to use regions
+tr_focus = c("North America", "South America", "Asia", "Africa", "Europe", "Oceania")
+tr_deaths2 = tr_deaths[tr_deaths$Entity %in% tr_focus,]
+
+
+table(tr_deaths$Entity)
+library(plotly)
+
+tr_deaths2$deaths_per_100000 = 100000*tr_deaths2$Deaths/tr_deaths2$Historical_Population
+fig <- tr_deaths2 %>% 
+  plot_ly(
+    y = ~deaths_per_100000, 
+    x = ~Year,
+    size = ~Historical_Population, 
+    # https://stackoverflow.com/questions/38400343/r-plotly-smaller-markers-in-bubble-plot
+    marker = list(sizeref=0.02),
+    color = ~Entity, 
+    # https://community.plotly.com/t/making-persistant-selections-in-plotlys-legend-for-animations/5640
+    # https://plotly.com/r/legend/#grouped-legend
+    #frame = ~frame, 
+    text = ~location, 
+    frame = ~Year,
+    #hoverinfo = 'text',
+    type = 'scatter',
+    mode = 'markers'
+   )
+fig <- fig %>% layout(
+  xaxis = list(
+    title = "Year",
+    zeroline = F
+  ),
+  yaxis = list(
+    title = "Deaths Per 100,000",
+    zeroline = F
+  )
+) 
+fig <- fig %>% animation_opts(
+  frame = 100, 
+  transition = 0, 
+  redraw = FALSE
+)
+fig <- fig %>% animation_slider(
+  hide = T
+)
+fig <- fig %>% animation_button(
+  x = 1, xanchor = "right", y = 0, yanchor = "bottom"
+)
+
+```
+```{r}
+fig 
+```
+
+
+- Fourth, describe your findings from the animated plot. 
+
+We find that among the 6 regions selected, there's a pretty wide dispersion in traffic fatalities. Regions such as North America and Oceania (Australia, New Zealand, etc.) are on the lower end of the spectrum with trafic deaths per 100,000 population. That said, we can see a general decreasing trend over time. More specifically, we can see that around 2010, deaths per 100,000 sharply begin to drop across the board.
+
+The steepest declines in this 30 year period are seen in Europe and Africa, which appear to have a relatively linear decrease in fatalities per 100,000 throughout the data sample.
+
